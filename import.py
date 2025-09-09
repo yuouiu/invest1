@@ -270,7 +270,7 @@ def main():
         
         tenant_access_token = input("请输入Tenant Access Token (回车使用默认): ").strip()
         if not tenant_access_token:
-            tenant_access_token = "t-g104958XY2KAUPBTACXIDYGPKS7WBOE66ZYXNBK2"  # 默认值
+            tenant_access_token = "t-g104989t4WS452VI6V7DXM6NNWID5LM6WXF7WYR2"  # 默认值
             print(f"使用默认Tenant Access Token")
         
         # 获取CSV文件路径
