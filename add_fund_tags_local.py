@@ -47,21 +47,37 @@ def match_tags_from_fund_name(fund_name, tag_library):
     matched_tags = []
     matched_categories = []
     
+    # 收集所有可能的标签匹配，按长度排序（长的优先）
+    all_matches = []
+    
     # 遍历所有标签分类
     for category, tags in tag_library.items():
         for tag in tags:
             # 检查基金名称中是否包含该标签
             if tag in fund_name:
+                all_matches.append((tag, category, len(tag)))
+    
+    # 按标签长度降序排序，优先匹配更长的标签
+    all_matches.sort(key=lambda x: x[2], reverse=True)
+    
+    # 选择不重叠的标签
+    used_positions = set()
+    
+    for tag, category, length in all_matches:
+        # 找到标签在基金名称中的位置
+        start_pos = fund_name.find(tag)
+        if start_pos != -1:
+            # 检查是否与已选择的标签重叠
+            tag_positions = set(range(start_pos, start_pos + length))
+            if not tag_positions.intersection(used_positions):
                 if tag not in matched_tags:  # 避免重复
                     matched_tags.append(tag)
                     matched_categories.append(category)
+                    used_positions.update(tag_positions)
                     
                     # 最多匹配2个标签
                     if len(matched_tags) >= 2:
                         break
-        
-        if len(matched_tags) >= 2:
-            break
     
     # 确保返回2个元素的列表
     while len(matched_tags) < 2:
@@ -78,8 +94,8 @@ def match_tags_by_fund_type(fund_type, fund_name, tag_library):
     
     # 定义基金类型分组
     stock_types = [
-        'QDII-股票', '混合型-偏股', '股票型-标准指数', 
-        '股票型-增强指数', '混合型-灵活配置', '股票型-普通'
+        'QDII-股票', 'QDII-债券', '商品型-非QDII', '混合型-偏股', '股票型-标准指数', 
+        '股票型-增强指数', '混合型-灵活配置', '混合型-偏债', '混合型-股债平衡', '股票型-普通'
     ]
     
     money_types = ['货币型']
@@ -88,6 +104,20 @@ def match_tags_by_fund_type(fund_type, fund_name, tag_library):
         '债券型-中短债', '债券型-长期纯债', '债券型-短期纯债',
         '债券型-债券指数', '债券型-普通债券'
     ]
+    
+    # 定义基金类型到标签的映射
+    fund_type_to_tag = {
+        'QDII-股票': '股票',
+        'QDII-债券': '债券',
+        '商品型-非QDII': '商品',
+        '混合型-偏股': '偏股',
+        '股票型-标准指数': '指数',
+        '股票型-增强指数': '指数',
+        '混合型-灵活配置': '灵活',
+        '混合型-偏债': '偏债',
+        '混合型-股债平衡': '平衡',
+        '股票型-普通': '股票'
+    }
     
     print(f"   🔍 基金类型: {fund_type}")
     
@@ -101,8 +131,23 @@ def match_tags_by_fund_type(fund_type, fund_name, tag_library):
         return ['债券', ''], ['债券', '']
     
     elif fund_type in stock_types:
-        print(f"   📈 股票/混合型基金，使用基金名称匹配标签")
-        return match_tags_from_fund_name(fund_name, tag_library)
+        print(f"   📈 股票/混合型基金，先使用基金名称匹配标签")
+        # 先尝试根据基金名称匹配标签
+        matched_tags, matched_categories = match_tags_from_fund_name(fund_name, tag_library)
+        
+        # 检查是否成功匹配到标签
+        if matched_tags[0] and matched_tags[0] != "":
+            print(f"   ✅ 根据基金名称匹配到标签: {matched_tags[0]}, {matched_tags[1]}")
+            return matched_tags, matched_categories
+        else:
+            # 如果根据名称找不到标签，使用基金类型映射
+            type_tag = fund_type_to_tag.get(fund_type, '')
+            if type_tag:
+                print(f"   🏷️  根据基金类型匹配到标签: {type_tag}")
+                return [type_tag, ''], [fund_type, '']
+            else:
+                print(f"   ❓ 未知基金类型，无法匹配标签")
+                return ['', ''], ['', '']
     
     else:
         print(f"   ❓ 未知基金类型，使用基金名称匹配标签")
