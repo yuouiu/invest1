@@ -3,6 +3,7 @@ import time
 import re
 import lark_oapi as lark
 from lark_oapi.api.bitable.v1 import *
+from config_loader import get_feishu_config
 
 
 def load_tag_library():
@@ -355,21 +356,46 @@ def main():
     print("💡 根据基金名称自动匹配并更新标签信息")
     
     try:
+        # 从配置文件加载默认值
+        try:
+            config = get_feishu_config()
+            default_app_token = config['app_token']
+            default_tenant_access_token = config['tenant_access_token']
+            default_table_id = config['table_id']
+        except Exception as e:
+            print(f"⚠️  加载配置文件失败: {str(e)}")
+            print("将使用手动输入模式")
+            default_app_token = ""
+            default_tenant_access_token = ""
+            default_table_id = ""
+        
         # 获取用户输入
-        app_token = input("请输入App Token (回车使用默认): ").strip()
+        app_token = input(f"请输入App Token (回车使用配置文件默认值): ").strip()
         if not app_token:
-            app_token = "KizFbPWrLaS8OwsxESJc4IgxnGg"  # 默认值
-            print(f"使用默认App Token: {app_token}")
+            app_token = default_app_token
+            if app_token:
+                print(f"使用配置文件App Token: {app_token}")
+            else:
+                print("❌ 错误: App Token不能为空")
+                return
         
-        table_id = input("请输入Table ID: ").strip()
+        table_id = input(f"请输入Table ID (回车使用配置文件默认值): ").strip()
         if not table_id:
-            print("❌ 错误: Table ID不能为空")
-            return
+            table_id = default_table_id
+            if table_id:
+                print(f"使用配置文件Table ID: {table_id}")
+            else:
+                print("❌ 错误: Table ID不能为空")
+                return
         
-        tenant_access_token = input("请输入Tenant Access Token (回车使用默认): ").strip()
+        tenant_access_token = input(f"请输入Tenant Access Token (回车使用配置文件默认值): ").strip()
         if not tenant_access_token:
-            tenant_access_token = "t-g10499f6STWUT4GVV6EG2JCCIM2QLKDV24PWWXTH"  # 默认值
-            print(f"使用默认Tenant Access Token")
+            tenant_access_token = default_tenant_access_token
+            if tenant_access_token:
+                print(f"使用配置文件Tenant Access Token")
+            else:
+                print("❌ 错误: Tenant Access Token不能为空")
+                return
         
         print(f"\n🔍 更新规则:")
         print(f"   - 读取表格中所有记录的基金名称")
